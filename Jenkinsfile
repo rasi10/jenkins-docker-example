@@ -1,18 +1,24 @@
 pipeline {    
-    agent any
+    agent none
     stages {
         stage('Deploy/Build App') {
+            agent {
+                docker { image 'cypress/base' }
+            }
             steps {
                 sh '''
                     echo 'Application deployed successfully!'
                 ''' 
             }
         }
-         stage('Frontend tests') {
+        stage('Frontend tests') {
+            agent {
+                docker { image 'cypress/base' }
+            }
             steps {
                sh '''
                     cd frontend-project/
-                    npm install && npm run test:report:regression                   
+                    npm ci && npm run test:report:regression                   
                 ''' 
                 archiveArtifacts allowEmptyArchive: true, artifacts: 'frontend-project/cypress/videos/**'
                 publishHTML([
@@ -26,30 +32,5 @@ pipeline {
                 ])
             }
         }
-         stage('Backend tests') {
-            steps {
-                sh 'pwd'
-                sh 'ls -lart'
-            }
-        }
-         stage('Performance tests') {
-            steps {
-                sh '''
-                    cd performance-tests/
-                    rm test1.csv -Rf && rm html-reports/ -Rf
-                    jmeter -n -t login-logout.jmx -l test1.csv -e -o html-reports/
-                '''
-                publishHTML([
-                    allowMissing: false, 
-                    alwaysLinkToLastBuild: false, 
-                    keepAll: false, 
-                    reportDir: 'performance-tests/html-reports', 
-                    reportFiles: 'index.html', 
-                    reportName: 'JMeter dashboard report', 
-                    reportTitles: ''
-                ])
-            }
-        }
     }
-
 }
